@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-	content: ["entrypoints/**/*.tsx", "components/**/*.tsx"],
+	content: ["**/*.tsx"],
 	theme: {
 		extend: {},
 	},

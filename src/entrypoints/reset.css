@@ -1,0 +1,3 @@
+body[extension-activated] .q-page-container>main.q-page.column {
+	display: none;
+}

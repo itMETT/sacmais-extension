@@ -1,15 +1,30 @@
-import { defineConfig, type WxtViteConfig } from 'wxt';
-import tailwindcss from '@tailwindcss/vite'
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig, type WxtViteConfig } from "wxt";
 
-// See https://wxt.dev/api/config.html
 export default defineConfig({
-  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
+  modules: ["@wxt-dev/module-react", "@wxt-dev/auto-icons"],
+  srcDir: "src",
   vite(_env) {
     return {
-      plugins: [tailwindcss()]
+      plugins: [tailwindcss()],
     } as WxtViteConfig;
   },
   manifest: {
-    permissions: ['storage', 'tabs'],
+    permissions: ["storage", "tabs"],
+    web_accessible_resources: [
+      {
+        "resources": ["custom.html"],
+        "matches": ["*://*.sacmais.com.br/*"]
+      }
+    ]
+  },
+  hooks: {
+    "build:manifestGenerated": (_wxt, manifest) => {
+      manifest.content_scripts ??= [];
+      manifest.content_scripts.push({
+        css: ["assets/reset.css"],
+        matches: ["*://*.sacmais.com.br/*"]
+      })
+    }
   }
 });
