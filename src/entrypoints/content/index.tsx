@@ -1,6 +1,6 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import type { IframeContentScriptUi } from "wxt/utils/content-script-ui/iframe";
-import { CHANGE_EXTENSION_STATUS_EVENT_NAME, STORAGE_KEY } from "@/utils/constants";
+import { CHANGE_EXTENSION_VISIBILITY_EVENT_NAME, STORAGE_KEY } from "@/utils/constants";
 
 const whereToShowCustomUI = [/\/#\/boards$/];
 
@@ -17,7 +17,7 @@ export default defineContentScript({
 		init(location.href, context);
 
 		chrome.runtime.onMessage.addListener((message, _sender) => {
-			if (message.type === CHANGE_EXTENSION_STATUS_EVENT_NAME) init(location.href, context);
+			if (message.type === CHANGE_EXTENSION_VISIBILITY_EVENT_NAME) console.log("clicked");
 		});
 
 		setInterval(() => {

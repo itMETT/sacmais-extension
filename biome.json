@@ -1,6 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.6/schema.json",
   "linter": {
+    "includes": ["src/**/*.{tsx,ts,json}", "*.{tsx,ts,json}"],
     "enabled": true,
     "rules": {
       "correctness": {
