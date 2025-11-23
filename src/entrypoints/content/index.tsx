@@ -1,12 +1,11 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import type { IframeContentScriptUi } from "wxt/utils/content-script-ui/iframe";
-import { CHANGE_EXTENSION_VISIBILITY_EVENT_NAME, STORAGE_KEY } from "@/utils/constants";
+import { ANCHOR_QUERY_SELECTOR, CHANGE_EXTENSION_VISIBILITY_EVENT_NAME, STORAGE_KEY } from "@/utils/constants";
 
 const whereToShowCustomUI = [/\/#\/boards$/];
 
-let uiRef: IframeContentScriptUi<void> | null = null;
+let uiRef: IframeContentScriptUi<HTMLElement> | null = null;
 let lastHref: string;
-const ANCHOR_QUERY_SELECTOR = ".q-page-container";
 
 export default defineContentScript({
 	matches: ["*://*.sacmais.com.br/*"],
@@ -17,7 +16,10 @@ export default defineContentScript({
 		init(location.href, context);
 
 		chrome.runtime.onMessage.addListener((message, _sender) => {
-			if (message.type === CHANGE_EXTENSION_VISIBILITY_EVENT_NAME) console.log("clicked");
+			if (message.type === CHANGE_EXTENSION_VISIBILITY_EVENT_NAME) {
+				console.log("okay");
+				init(location.href, context);
+			}
 		});
 
 		setInterval(() => {
@@ -30,10 +32,9 @@ export default defineContentScript({
 });
 
 async function init(url: string, context: ContentScriptContext) {
-	const activatedStatus = await storage.getItem(STORAGE_KEY, { fallback: "not-activated" });
+	const activatedStatus = await storage.getItem(STORAGE_KEY, { fallback: "invisible" });
 
-	if (isAllowedURL(url) && activatedStatus === "not-activated") {
-		document.body.removeAttribute("extension-activated");
+	if (isAllowedURL(url) && activatedStatus === "invisible") {
 		uiRef?.remove();
 		uiRef = null;
 		return;
@@ -42,33 +43,41 @@ async function init(url: string, context: ContentScriptContext) {
 	if (isAllowedURL(url)) {
 		await waitForElement(ANCHOR_QUERY_SELECTOR);
 		await mountShadowRootUi(context, document);
-		document.body.setAttribute("extension-activated", "");
 		return;
 	}
 
-	document.body.removeAttribute("extension-activated");
 	uiRef?.remove();
 	uiRef = null;
 }
 
-async function mountShadowRootUi(context: ContentScriptContext, document: Document) {
+async function mountShadowRootUi(context: ContentScriptContext, _document?: Document) {
 	if (uiRef) {
 		uiRef.remove();
 		uiRef = null;
 	}
 
-	const $wrapper = document.createElement("div");
-	const $container = document.querySelector(ANCHOR_QUERY_SELECTOR)!;
-	$container.append($wrapper);
-
 	uiRef = createIframeUi(context, {
 		page: "/custom.html",
 		position: "inline",
-		anchor: $wrapper,
-		onMount(_wrapper, $iframe) {
+		anchor: ANCHOR_QUERY_SELECTOR,
+		onMount($wrapper, $iframe) {
+			$wrapper.style.position = "absolute";
+			$wrapper.style.inset = "0";
+			$wrapper.style.zIndex = "10000";
+			$wrapper.style.background = "oklch(0 0 0 / 50%)";
+			$wrapper.style.backdropFilter = "blur(4px)";
+			$wrapper.style.overflow = "hidden";
+			document.body.style.overflow = "hidden";
+
 			$iframe.width = "100%";
 			$iframe.height = "100%";
 			$iframe.style.border = "none";
+
+			return $wrapper;
+		},
+		onRemove($mounted) {
+			document.body.style.overflow = "";
+			$mounted?.remove();
 		},
 	});
 

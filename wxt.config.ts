@@ -17,14 +17,8 @@ export default defineConfig({
 				matches: ["*://*.sacmais.com.br/*"],
 			},
 		],
-	},
-	hooks: {
-		"build:manifestGenerated": (_wxt, manifest) => {
-			manifest.content_scripts ??= [];
-			manifest.content_scripts.push({
-				css: ["assets/reset.css"],
-				matches: ["*://*.sacmais.com.br/*"],
-			});
+		action: {
+			default_popup: "",
 		},
 	},
 });
