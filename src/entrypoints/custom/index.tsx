@@ -1,9 +1,32 @@
+import { Modal } from "@/components/modal";
+import { Sidebar } from "@/components/sidebar";
+import { ExportColumns } from "./components/export-columns";
+
+const sidebarEntries = [
+	{
+		title: "Exportar colunas",
+		Component: ExportColumns,
+	},
+	{
+		title: "Transferir contatos entre colunas",
+		Component: () => "Transfer Contacts",
+	},
+];
+
 export function CustomUI() {
+	const [selectedSidebarEntryIndex, setSelectedSidebarEntryIndex] = useState<number>(0);
+
+	const Content = useMemo(() => sidebarEntries[selectedSidebarEntryIndex].Component, [selectedSidebarEntryIndex]);
 	return (
-		<div className="fixed inset-0 flex items-center justify-center">
-			<div className="bg-white text-black dark:text-white dark:bg-[#1d1d1d] w-[clamp(24rem,80vw,90vw)] h-[clamp(20rem,80vh,90vh)] p-6 rounded-xl">
-				Conteúdo do modal
+		<Modal>
+			<Sidebar
+				entries={sidebarEntries}
+				selectedEntryIndex={selectedSidebarEntryIndex}
+				onSelect={setSelectedSidebarEntryIndex}
+			/>
+			<div className="p-4">
+				<Content />
 			</div>
-		</div>
+		</Modal>
 	);
 }
