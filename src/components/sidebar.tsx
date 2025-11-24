@@ -10,10 +10,10 @@ export function Sidebar({ entries, selectedEntryIndex, onSelect }: Props) {
 			{entries.map(({ title }, index) => (
 				<div
 					key={title}
-					className="p-4 border-b-2 border-gray-900/50 cursor-pointer hover:bg-gray-900 hover:border-gray-950/20 hover:transition-all"
+					className="p-4 border-b border-transparent cursor-pointer hover:bg-white/10 hover:border-white/15 hover:transition-all"
 					style={{
-						background: selectedEntryIndex === index ? "var(--color-gray-900)" : "",
-						borderColor: selectedEntryIndex === index ? "oklch(from var(--color-gray-950) l c h / 20%)" : "",
+						background: selectedEntryIndex === index ? "oklch(from var(--color-white) l c h / 10%)" : "",
+						borderColor: selectedEntryIndex === index ? "oklch(from var(--color-white) l c h / 15%)" : "",
 					}}
 					onClick={() => onSelect(index)}
 				>

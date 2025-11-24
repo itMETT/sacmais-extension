@@ -24,7 +24,7 @@ export function CustomUI() {
 				selectedEntryIndex={selectedSidebarEntryIndex}
 				onSelect={setSelectedSidebarEntryIndex}
 			/>
-			<div className="p-4">
+			<div className="flex flex-col flex-1 p-4">
 				<Content />
 			</div>
 		</Modal>
