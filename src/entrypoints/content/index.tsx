@@ -17,8 +17,25 @@ export default defineContentScript({
 
 		chrome.runtime.onMessage.addListener((message, _sender) => {
 			if (message.type === CHANGE_EXTENSION_VISIBILITY_EVENT_NAME) {
-				console.log("okay");
 				init(location.href, context);
+			}
+			if (message.type === "GET_AUTH_TOKEN") {
+				postMessage({ type: "SEND_AUTH_TOKEN", payload: localStorage.getItem("time") });
+			}
+		});
+
+		window.addEventListener("message", (event) => {
+			if (event.data?.type === "GET_PARENT_DATA") {
+				const payload = {
+					token: localStorage.getItem("token"),
+					baseURL: localStorage.getItem("instanceAddress"),
+				};
+
+				uiRef?.iframe?.contentWindow?.postMessage({ type: "SEND_PARENT_DATA", payload }, "*");
+			}
+
+			if (event.data?.type === "RELOAD") {
+				location.reload();
 			}
 		});
 

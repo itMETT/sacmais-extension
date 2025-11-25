@@ -5,7 +5,7 @@ import { Progress } from "./ui/progress";
 export function ApplyChanges() {
 	return (
 		<div className="mt-auto">
-			<Item className="mt-4" variant="outline">
+			<Item className="mt-4" variant="outline" size="sm">
 				<ItemContent>
 					<Progress />
 				</ItemContent>
