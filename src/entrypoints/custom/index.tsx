@@ -6,6 +6,7 @@ import { api } from "@/lib/axios";
 import { useParentStore } from "./stores/parent.store";
 import { setupAxios } from "@/lib/axios";
 import { useCRMStore } from "./stores/crm.store";
+import { TransferContacts } from "./components/transfer-contacts";
 
 const sidebarEntries = [
 	{
@@ -14,7 +15,7 @@ const sidebarEntries = [
 	},
 	{
 		title: "Transferir contatos entre colunas",
-		Component: () => "Transfer Contacts",
+		Component: TransferContacts,
 	},
 ];
 

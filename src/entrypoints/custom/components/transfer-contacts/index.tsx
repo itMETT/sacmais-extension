@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 import { Tooltip } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
@@ -19,14 +20,13 @@ import { ConfirmChanges } from "@/components/confirm-changes";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/axios";
 import type { Dispatch, SetStateAction } from "react";
-import { Combobox } from "@/components/ui/combobox";
 
 const defaultPlaceholder = "Escolha uma coluna";
 const defaultNotFoundMessage = "Nenhuma coluna encontrada";
 
 type Contact = { id: number; name: string; number: string };
 
-export function ExportColumns() {
+export function TransferContacts() {
 	const [selectedColumnIds, setSelectedColumnIds] = useState<Array<number>>([]);
 	const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -90,77 +90,75 @@ export function ExportColumns() {
 		<div className="flex flex-col flex-1">
 			<div className="flex flex-col gap-2">
 				<Card>
-					<CardHeader className="flex flex-row">
-						<div>
-							<CardTitle className="text-[1.2rem]">Exportar colunas</CardTitle>
-							<CardDescription>Adicione as colunas que deseja exportar</CardDescription>
-						</div>
-
-						<div className="flex items-center justify-center ml-auto">
-							<Tooltip>
-								<TooltipTrigger>
-									<Combobox
-										entries={comboboxEntries}
-										placeholder={defaultPlaceholder}
-										notFoundMessage={defaultNotFoundMessage}
-										disabledIds={selectedColumnIds}
-										onSelect={handleOnSelect}
-									>
-										<Button size="sm" variant="default" disabled={isLoading}>
-											<PlusIcon />
-										</Button>
-									</Combobox>
-								</TooltipTrigger>
-
-								<TooltipContent sideOffset={5}>Clique para adicionar uma coluna</TooltipContent>
-							</Tooltip>
-						</div>
+					<CardHeader className="border-b border-white/10">
+						<CardTitle>Transferir contatos entre colunas</CardTitle>
+						<CardDescription>
+							Selecione a coluna de origem e a coluna de destino dos contatos que deseja transferir
+						</CardDescription>
 					</CardHeader>
+
+					<CardContent className="flex flex-wrap gap-2 p-6">
+						{selectedColumns.map(({ id, name, columnContacts }) => (
+							<Button key={id} className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
+								{name}
+
+								<Tooltip>
+									<TooltipTrigger>
+										<div className="flex items-center justify-center bg-primary text-primary-foreground w-5 h-5 text-[10px]/[11px] rounded-full">
+											{columnContacts.length}
+										</div>
+									</TooltipTrigger>
+
+									<TooltipContent sideOffset={5}>Número de contatos na coluna</TooltipContent>
+								</Tooltip>
+
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<i className="cursor-pointer ml-2">
+											<XIcon />
+										</i>
+									</AlertDialogTrigger>
+
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>
+												Tem certeza que deseja remover a coluna <br />
+												<i>“{name.trim()}”</i>?
+											</AlertDialogTitle>
+
+											<AlertDialogDescription>
+												Você poderá adicioná-la novamente, se assim desejar.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancelar</AlertDialogCancel>
+											<AlertDialogAction onClick={() => handleRemove(id)}>Remover</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							</Button>
+						))}
+
+						<Tooltip>
+							<TooltipTrigger>
+								<Combobox
+									entries={comboboxEntries}
+									placeholder={defaultPlaceholder}
+									notFoundMessage={defaultNotFoundMessage}
+									disabledIds={selectedColumnIds}
+									onSelect={handleOnSelect}
+								>
+									<Button size="sm" variant="default" disabled={isLoading}>
+										<PlusIcon />
+									</Button>
+								</Combobox>
+							</TooltipTrigger>
+
+							<TooltipContent sideOffset={5}>Clique para adicionar uma coluna</TooltipContent>
+						</Tooltip>
+					</CardContent>
 				</Card>
-
-				<div className="flex flex-wrap gap-2">
-					{selectedColumns.map(({ id, name, columnContacts }) => (
-						<Button key={id} className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
-							{name}
-
-							<Tooltip>
-								<TooltipTrigger>
-									<div className="flex items-center justify-center bg-primary text-primary-foreground w-5 h-5 text-[10px]/[11px] rounded-full">
-										{columnContacts.length}
-									</div>
-								</TooltipTrigger>
-
-								<TooltipContent sideOffset={5}>Número de contatos na coluna</TooltipContent>
-							</Tooltip>
-
-							<AlertDialog>
-								<AlertDialogTrigger asChild>
-									<i className="cursor-pointer ml-2">
-										<XIcon />
-									</i>
-								</AlertDialogTrigger>
-
-								<AlertDialogContent>
-									<AlertDialogHeader>
-										<AlertDialogTitle>
-											Tem certeza que deseja remover a coluna <br />
-											<i>“{name.trim()}”</i>?
-										</AlertDialogTitle>
-
-										<AlertDialogDescription>
-											Você poderá adicioná-la novamente, se assim desejar.
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-
-									<AlertDialogFooter>
-										<AlertDialogCancel>Cancelar</AlertDialogCancel>
-										<AlertDialogAction onClick={() => handleRemove(id)}>Remover</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-						</Button>
-					))}
-				</div>
 			</div>
 
 			<ConfirmChanges progress={progress}>
@@ -174,7 +172,7 @@ export function ExportColumns() {
 							handleReset();
 						}}
 					>
-						<span style={{ opacity: progress === 100 ? 0 : isLoading ? 0 : 1 }}>Exportar</span>
+						<span style={{ opacity: progress === 100 ? 0 : isLoading ? 0 : 1 }}>Tranferir</span>
 
 						{progress < 100 && isLoading && <Spinner className="absolute inset-0 m-auto" />}
 
