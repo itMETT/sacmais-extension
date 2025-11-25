@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Combobox } from "@/components/ui/combobox";
 import { Tooltip } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PlusIcon, XIcon } from "lucide-react";
+import { PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
 import { useCRMStore } from "../../stores/crm.store";
 import {
 	AlertDialog,
@@ -81,6 +81,11 @@ export function ExportColumns() {
 		[selectedContacts, selectedContactIds],
 	);
 
+	const handleReset = useCallback(() => {
+		setSelectedContacts([]);
+		setSelectedColumnIds([]);
+	}, [setSelectedContacts, setIsLoading]);
+
 	return (
 		<div className="flex flex-col flex-1">
 			<div className="flex flex-col gap-2">
@@ -92,7 +97,7 @@ export function ExportColumns() {
 
 					<CardContent className="flex flex-wrap gap-2 p-6">
 						{selectedColumns.map(({ id, name, columnContacts }) => (
-							<Button key={id} className="flex gap-2 h-9" variant="outline" size="sm">
+							<Button key={id} className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
 								{name}
 
 								<Tooltip>
@@ -142,7 +147,7 @@ export function ExportColumns() {
 									disabledIds={selectedColumnIds}
 									onSelect={handleOnSelect}
 								>
-									<Button size="sm" variant="default">
+									<Button size="sm" variant="default" disabled={isLoading}>
 										<PlusIcon />
 									</Button>
 								</Combobox>
@@ -155,26 +160,44 @@ export function ExportColumns() {
 			</div>
 
 			<ConfirmChanges progress={progress}>
-				<AlertDialog>
-					<AlertDialogTrigger asChild>
-						<Button variant="outline" size="sm">
-							{isLoading ? <Spinner /> : "Exportar"}
-						</Button>
-					</AlertDialogTrigger>
+				{isLoading || progress === 100 ? (
+					<Button
+						className="relative flex items-center justify-center"
+						variant="outline"
+						size="sm"
+						onClick={() => {
+							if (progress < 100) return;
+							handleReset();
+						}}
+					>
+						<span style={{ opacity: progress === 100 ? 0 : isLoading ? 0 : 1 }}>Exportar</span>
 
-					<AlertDialogContent>
-						<AlertDialogHeader>
-							<AlertDialogTitle>Deseja exportar as colunas?</AlertDialogTitle>
+						{progress < 100 && isLoading && <Spinner className="absolute inset-0 m-auto" />}
 
-							<AlertDialogDescription>As colunas serão exportadas para um arquivo CSV.</AlertDialogDescription>
-						</AlertDialogHeader>
+						{progress === 100 && !isLoading && <RotateCcwIcon className="absolute inset-0 m-auto" />}
+					</Button>
+				) : (
+					<AlertDialog>
+						<AlertDialogTrigger asChild>
+							<Button className="relative flex items-center justify-center" variant="outline" size="sm">
+								Exportar
+							</Button>
+						</AlertDialogTrigger>
 
-						<AlertDialogFooter>
-							<AlertDialogCancel>Cancelar</AlertDialogCancel>
-							<AlertDialogAction onClick={handleExport}>Exportar</AlertDialogAction>
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Deseja exportar as colunas?</AlertDialogTitle>
+
+								<AlertDialogDescription>As colunas serão exportadas para um arquivo CSV.</AlertDialogDescription>
+							</AlertDialogHeader>
+
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancelar</AlertDialogCancel>
+								<AlertDialogAction onClick={handleExport}>Exportar</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				)}
 			</ConfirmChanges>
 		</div>
 	);
