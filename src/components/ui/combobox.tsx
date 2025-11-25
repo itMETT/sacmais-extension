@@ -27,8 +27,8 @@ type Props<T extends Entry> = {
 	entries: Array<T>;
 	placeholder: string;
 	notFoundMessage: string;
-	selectedId?: Entry["id"];
-	disabledIds?: Entry["id"][];
+	selectedId?: Entry["id"] | null;
+	disabledIds?: Entry["id"][] | null;
 	onSelect(entry: T["id"]): void;
 };
 

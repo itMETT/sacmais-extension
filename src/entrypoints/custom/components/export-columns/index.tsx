@@ -28,7 +28,7 @@ type Contact = { id: number; name: string; number: string };
 
 export function ExportColumns() {
 	const [selectedColumnIds, setSelectedColumnIds] = useState<Array<number>>([]);
-	const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
+	const [fetchedContacts, setFetchedContacts] = useState<Array<Contact>>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const columns = useCRMStore((state) => state.columns);
 	const comboboxEntries = useMemo(
@@ -71,26 +71,26 @@ export function ExportColumns() {
 	const handleExport = useCallback(async () => {
 		setIsLoading(true);
 
-		const contacts = await exportSelectedColumnsContacts(selectedContactIds, setSelectedContacts);
+		const contacts = await fetchContacts(selectedContactIds, setFetchedContacts);
 		await downloadCsv(contacts);
 		setIsLoading(false);
-	}, [setIsLoading, selectedContactIds, setSelectedContacts]);
+	}, [setIsLoading, selectedContactIds, setFetchedContacts]);
 
 	const progress = useMemo(
-		() => (selectedContacts.length * 100) / selectedContactIds.length,
-		[selectedContacts, selectedContactIds],
+		() => (fetchedContacts.length * 100) / selectedContactIds.length,
+		[fetchedContacts, selectedContactIds],
 	);
 
 	const handleReset = useCallback(() => {
-		setSelectedContacts([]);
+		setFetchedContacts([]);
 		setSelectedColumnIds([]);
-	}, [setSelectedContacts, setIsLoading]);
+	}, [setFetchedContacts, setIsLoading]);
 
 	return (
 		<div className="flex flex-col flex-1">
 			<div className="flex flex-col gap-2">
 				<Card>
-					<CardHeader className="flex flex-row">
+					<CardHeader className="flex flex-row flex-wrap">
 						<div>
 							<CardTitle className="text-[1.2rem]">Exportar colunas</CardTitle>
 							<CardDescription>Adicione as colunas que deseja exportar</CardDescription>
@@ -183,7 +183,12 @@ export function ExportColumns() {
 				) : (
 					<AlertDialog>
 						<AlertDialogTrigger asChild>
-							<Button className="relative flex items-center justify-center" variant="outline" size="sm">
+							<Button
+								className="relative flex items-center justify-center"
+								variant="outline"
+								size="sm"
+								disabled={!selectedContactIds.length}
+							>
 								Exportar
 							</Button>
 						</AlertDialogTrigger>
@@ -207,22 +212,22 @@ export function ExportColumns() {
 	);
 }
 
-function exportSelectedColumnsContacts(
+function fetchContacts(
 	contactIds: Array<number>,
-	setContacts: Dispatch<SetStateAction<Array<Contact>>>,
+	setFetchedContacts: Dispatch<SetStateAction<Array<Contact>>>,
 ): Promise<Array<Contact>> {
 	return new Promise((resolve) => {
-		const contacts: Array<Contact> = [];
+		const fetchedContacts: Array<Contact> = [];
 
 		let currentCount = 0;
 		const intervalId = setInterval(() => {
 			if (currentCount === contactIds.length - 1) clearInterval(intervalId);
 
 			api.get<Contact>(`/contacts/${contactIds[currentCount]}`).then(({ data }) => {
-				contacts.push(data);
-				setContacts((state) => [...state, data]);
+				fetchedContacts.push(data);
+				setFetchedContacts((state) => [...state, data]);
 
-				if (contacts.length === contactIds.length) resolve(contacts);
+				if (fetchedContacts.length === contactIds.length) resolve(fetchedContacts);
 			});
 
 			currentCount += 1;

@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Combobox } from "@/components/ui/combobox";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
+import { ChevronsUpDown, RotateCcwIcon } from "lucide-react";
 import { useCRMStore } from "../../stores/crm.store";
 import {
 	AlertDialog,
@@ -20,145 +19,131 @@ import { ConfirmChanges } from "@/components/confirm-changes";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/axios";
 import type { Dispatch, SetStateAction } from "react";
+import { Item, ItemActions, ItemContent } from "@/components/ui/item";
+import { Combobox } from "@/components/ui/combobox";
+
+type Contact = { id: number; name: string; number: string };
 
 const defaultPlaceholder = "Escolha uma coluna";
 const defaultNotFoundMessage = "Nenhuma coluna encontrada";
 
-type Contact = { id: number; name: string; number: string };
-
 export function TransferContacts() {
-	const [selectedColumnIds, setSelectedColumnIds] = useState<Array<number>>([]);
-	const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
+	const [originColumnId, setOriginColumnId] = useState<number | null>(null);
+	const [destinationColumnId, setDestinationColumnId] = useState<number | null>(null);
+	const [transferedContacts, setTransferedContacts] = useState<Array<Contact>>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const columns = useCRMStore((state) => state.columns);
 	const comboboxEntries = useMemo(
 		() => columns.map(({ id, name, board }) => ({ id, name, group: board.name })),
 		[columns],
 	);
-	const selectedColumns = useMemo(
-		() => selectedColumnIds.map((id) => columns.find((column) => column.id === id)!),
-		[selectedColumnIds],
+
+	const originColumn = useMemo(() => columns.find((column) => column.id === originColumnId), [columns, originColumnId]);
+	const destinationColumn = useMemo(
+		() => columns.find((column) => column.id === destinationColumnId),
+		[columns, destinationColumnId],
 	);
 
-	const handleOnSelect = useCallback(
-		(id: number) => {
-			setSelectedColumnIds((state) => (state.find((stateId) => stateId === id) ? state : [...state, id]));
-		},
-		[setSelectedColumnIds],
-	);
+	const originContactIds = useMemo(() => {
+		if (!originColumn) return [];
+		return originColumn.columnContacts.map(({ contactId }) => contactId);
+	}, [originColumn]);
 
-	const handleRemove = useCallback(
-		(id: number) => {
-			setSelectedColumnIds((state) => {
-				const stateSet = new Set(state);
-				stateSet.delete(id);
-				return Array.from(stateSet);
-			});
-		},
-		[setSelectedColumnIds],
-	);
-
-	const selectedContactIds = useMemo(
-		() =>
-			selectedColumnIds.flatMap((id) => {
-				const column = columns.find((column) => column.id === id)!;
-				const contactId = column.columnContacts.map(({ contactId }) => contactId);
-				return contactId;
-			}),
-		[selectedColumnIds, columns],
-	);
-
-	const handleExport = useCallback(async () => {
+	const handleTransfer = useCallback(async () => {
 		setIsLoading(true);
 
-		const contacts = await exportSelectedColumnsContacts(selectedContactIds, setSelectedContacts);
-		await downloadCsv(contacts);
+		await transferContacts(originColumnId!, destinationColumnId!, originContactIds, setTransferedContacts);
 		setIsLoading(false);
-	}, [setIsLoading, selectedContactIds, setSelectedContacts]);
+	}, [originColumnId, destinationColumnId, setIsLoading, originContactIds, setTransferedContacts]);
 
 	const progress = useMemo(
-		() => (selectedContacts.length * 100) / selectedContactIds.length,
-		[selectedContacts, selectedContactIds],
+		() => (transferedContacts.length * 100) / (originContactIds.length || 1),
+		[transferedContacts, originContactIds],
 	);
 
 	const handleReset = useCallback(() => {
-		setSelectedContacts([]);
-		setSelectedColumnIds([]);
-	}, [setSelectedContacts, setIsLoading]);
+		useCRMStore.getState().fetch();
+		setTransferedContacts([]);
+		setOriginColumnId(null);
+		setDestinationColumnId(null);
+	}, [setTransferedContacts]);
 
 	return (
 		<div className="flex flex-col flex-1">
 			<div className="flex flex-col gap-2">
 				<Card>
-					<CardHeader className="border-b border-white/10">
-						<CardTitle>Transferir contatos entre colunas</CardTitle>
-						<CardDescription>
-							Selecione a coluna de origem e a coluna de destino dos contatos que deseja transferir
-						</CardDescription>
+					<CardHeader>
+						<CardTitle className="text-[1.2rem]">Transferir contatos entre colunas</CardTitle>
+						<CardDescription>Escolha a coluna de origem e destino dos contatos que deseja transferir</CardDescription>
 					</CardHeader>
-
-					<CardContent className="flex flex-wrap gap-2 p-6">
-						{selectedColumns.map(({ id, name, columnContacts }) => (
-							<Button key={id} className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
-								{name}
-
-								<Tooltip>
-									<TooltipTrigger>
-										<div className="flex items-center justify-center bg-primary text-primary-foreground w-5 h-5 text-[10px]/[11px] rounded-full">
-											{columnContacts.length}
-										</div>
-									</TooltipTrigger>
-
-									<TooltipContent sideOffset={5}>Número de contatos na coluna</TooltipContent>
-								</Tooltip>
-
-								<AlertDialog>
-									<AlertDialogTrigger asChild>
-										<i className="cursor-pointer ml-2">
-											<XIcon />
-										</i>
-									</AlertDialogTrigger>
-
-									<AlertDialogContent>
-										<AlertDialogHeader>
-											<AlertDialogTitle>
-												Tem certeza que deseja remover a coluna <br />
-												<i>“{name.trim()}”</i>?
-											</AlertDialogTitle>
-
-											<AlertDialogDescription>
-												Você poderá adicioná-la novamente, se assim desejar.
-											</AlertDialogDescription>
-										</AlertDialogHeader>
-
-										<AlertDialogFooter>
-											<AlertDialogCancel>Cancelar</AlertDialogCancel>
-											<AlertDialogAction onClick={() => handleRemove(id)}>Remover</AlertDialogAction>
-										</AlertDialogFooter>
-									</AlertDialogContent>
-								</AlertDialog>
-							</Button>
-						))}
-
-						<Tooltip>
-							<TooltipTrigger>
-								<Combobox
-									entries={comboboxEntries}
-									placeholder={defaultPlaceholder}
-									notFoundMessage={defaultNotFoundMessage}
-									disabledIds={selectedColumnIds}
-									onSelect={handleOnSelect}
-								>
-									<Button size="sm" variant="default" disabled={isLoading}>
-										<PlusIcon />
-									</Button>
-								</Combobox>
-							</TooltipTrigger>
-
-							<TooltipContent sideOffset={5}>Clique para adicionar uma coluna</TooltipContent>
-						</Tooltip>
-					</CardContent>
 				</Card>
+
+				<div className="flex flex-wrap gap-2">
+					<Item className="w-full" variant="outline">
+						<ItemContent className="text-muted-foreground">Origem</ItemContent>
+
+						<ItemActions>
+							<Combobox
+								entries={comboboxEntries}
+								placeholder={defaultPlaceholder}
+								notFoundMessage={defaultNotFoundMessage}
+								selectedId={originColumnId}
+								onSelect={setOriginColumnId}
+							>
+								<Button className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
+									{originColumn ? originColumn.name : "Nehuma coluna selecionada..."}
+
+									{originColumn && (
+										<Tooltip>
+											<TooltipTrigger>
+												<div className="flex items-center justify-center bg-primary text-primary-foreground w-5 h-5 text-[10px]/[11px] rounded-full">
+													{originColumn.columnContacts.length}
+												</div>
+											</TooltipTrigger>
+
+											<TooltipContent sideOffset={5}>Número de contatos na coluna</TooltipContent>
+										</Tooltip>
+									)}
+
+									<ChevronsUpDown className="opacity-50 ml-2" />
+								</Button>
+							</Combobox>
+						</ItemActions>
+					</Item>
+
+					<Item className="w-full" variant="outline">
+						<ItemContent className="text-muted-foreground">Destino</ItemContent>
+
+						<ItemActions>
+							<Combobox
+								entries={comboboxEntries}
+								placeholder={defaultPlaceholder}
+								notFoundMessage={defaultNotFoundMessage}
+								disabledIds={originColumnId === null ? null : [originColumnId]}
+								selectedId={destinationColumnId}
+								onSelect={setDestinationColumnId}
+							>
+								<Button className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
+									{destinationColumn ? destinationColumn.name : "Nehuma coluna selecionada..."}
+
+									{destinationColumn && (
+										<Tooltip>
+											<TooltipTrigger>
+												<div className="flex items-center justify-center bg-primary text-primary-foreground w-5 h-5 text-[10px]/[11px] rounded-full">
+													{destinationColumn.columnContacts.length}
+												</div>
+											</TooltipTrigger>
+
+											<TooltipContent sideOffset={5}>Número de contatos na coluna</TooltipContent>
+										</Tooltip>
+									)}
+
+									<ChevronsUpDown className="opacity-50 ml-2" />
+								</Button>
+							</Combobox>
+						</ItemActions>
+					</Item>
+				</div>
 			</div>
 
 			<ConfirmChanges progress={progress}>
@@ -181,21 +166,30 @@ export function TransferContacts() {
 				) : (
 					<AlertDialog>
 						<AlertDialogTrigger asChild>
-							<Button className="relative flex items-center justify-center" variant="outline" size="sm">
-								Exportar
+							<Button
+								className="relative flex items-center justify-center"
+								variant="outline"
+								size="sm"
+								disabled={!originColumn || !destinationColumn || !originContactIds.length}
+							>
+								Transferir
 							</Button>
 						</AlertDialogTrigger>
 
 						<AlertDialogContent>
 							<AlertDialogHeader>
-								<AlertDialogTitle>Deseja exportar as colunas?</AlertDialogTitle>
+								<AlertDialogTitle>
+									Deseja transferir os contatos da coluna <br />
+									<i>“{originColumn?.name.trim()}”</i> para a coluna <br />
+									<i>“{destinationColumn?.name.trim()}”</i>?
+								</AlertDialogTitle>
 
-								<AlertDialogDescription>As colunas serão exportadas para um arquivo CSV.</AlertDialogDescription>
+								<AlertDialogDescription>Essa ação não poderá ser desfeita.</AlertDialogDescription>
 							</AlertDialogHeader>
 
 							<AlertDialogFooter>
 								<AlertDialogCancel>Cancelar</AlertDialogCancel>
-								<AlertDialogAction onClick={handleExport}>Exportar</AlertDialogAction>
+								<AlertDialogAction onClick={handleTransfer}>Transferir</AlertDialogAction>
 							</AlertDialogFooter>
 						</AlertDialogContent>
 					</AlertDialog>
@@ -205,48 +199,32 @@ export function TransferContacts() {
 	);
 }
 
-function exportSelectedColumnsContacts(
+function transferContacts(
+	originColumnId: number,
+	destinationColumnId: number,
 	contactIds: Array<number>,
-	setContacts: Dispatch<SetStateAction<Array<Contact>>>,
+	setTransferedContacts: Dispatch<SetStateAction<Array<Contact>>>,
 ): Promise<Array<Contact>> {
 	return new Promise((resolve) => {
-		const contacts: Array<Contact> = [];
+		const transferedContacts: Array<Contact> = [];
 
 		let currentCount = 0;
 		const intervalId = setInterval(() => {
 			if (currentCount === contactIds.length - 1) clearInterval(intervalId);
 
-			api.get<Contact>(`/contacts/${contactIds[currentCount]}`).then(({ data }) => {
-				contacts.push(data);
-				setContacts((state) => [...state, data]);
+			api
+				.put<Contact>(`/board-columns/${contactIds[currentCount]}/move`, {
+					oldColumnId: originColumnId,
+					newColumnId: destinationColumnId,
+				})
+				.then(({ data }) => {
+					transferedContacts.push(data);
+					setTransferedContacts((state) => [...state, data]);
 
-				if (contacts.length === contactIds.length) resolve(contacts);
-			});
+					if (transferedContacts.length === contactIds.length) resolve(transferedContacts);
+				});
 
 			currentCount += 1;
 		}, 50);
-	});
-}
-
-function downloadCsv(data: Array<Contact>): Promise<void> {
-	return new Promise((resolve) => {
-		const header = "Nome;Número";
-		const rows = data.map(({ name, number }) => `${name};${number}`);
-		const csv = [header, ...rows].join("\n");
-
-		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = "LISTA_DE_CLIENTES.csv";
-		a.style.display = "none";
-		document.body.appendChild(a);
-		a.click();
-
-		a.remove();
-		URL.revokeObjectURL(url);
-
-		resolve(undefined);
 	});
 }

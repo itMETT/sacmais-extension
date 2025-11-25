@@ -2,11 +2,10 @@ import { Modal } from "@/components/modal";
 import { Sidebar } from "@/components/sidebar";
 import { ExportColumns } from "./components/export-columns";
 import { Spinner } from "@/components/ui/spinner";
-import { api } from "@/lib/axios";
 import { useParentStore } from "./stores/parent.store";
 import { setupAxios } from "@/lib/axios";
-import { useCRMStore } from "./stores/crm.store";
 import { TransferContacts } from "./components/transfer-contacts";
+import { useCRMStore } from "./stores/crm.store";
 
 const sidebarEntries = [
 	{
@@ -32,7 +31,7 @@ export function CustomUI() {
 
 			unsubscribe();
 			setupAxios(state.token, state.baseURL);
-			await getCRMQuery();
+			await useCRMStore.getState().fetch();
 			setIsLoaded(true);
 		});
 	}, []);
@@ -55,13 +54,4 @@ export function CustomUI() {
 			)}
 		</Modal>
 	);
-}
-
-async function getCRMQuery() {
-	const { data: boards } = await api.get<Array<{ id: number; name: string }>>("/boards/list");
-
-	const boardColumnsQueryParams = boards.map(({ id }) => `boardId=${id}`).join("&");
-	const { data: columns } = await api.get(`/board-columns/list?${boardColumnsQueryParams}`);
-
-	useCRMStore.setState({ boards, columns });
 }
