@@ -16,12 +16,20 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ConfirmChanges } from "@/components/confirm-changes";
+import { Spinner } from "@/components/ui/spinner";
+import { api } from "@/lib/axios";
+import type { Dispatch, SetStateAction } from "react";
 
 const defaultPlaceholder = "Escolha uma coluna";
 const defaultNotFoundMessage = "Nenhuma coluna encontrada";
 
+type Contact = { id: number; name: string; number: string };
+
 export function ExportColumns() {
 	const [selectedColumnIds, setSelectedColumnIds] = useState<Array<number>>([]);
+	const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const columns = useCRMStore((state) => state.columns);
 	const comboboxEntries = useMemo(
 		() => columns.map(({ id, name, board }) => ({ id, name, group: board.name })),
@@ -50,6 +58,29 @@ export function ExportColumns() {
 		[setSelectedColumnIds],
 	);
 
+	const selectedContactIds = useMemo(
+		() =>
+			selectedColumnIds.flatMap((id) => {
+				const column = columns.find((column) => column.id === id)!;
+				const contactId = column.columnContacts.map(({ contactId }) => contactId);
+				return contactId;
+			}),
+		[selectedColumnIds, columns],
+	);
+
+	const handleExport = useCallback(async () => {
+		setIsLoading(true);
+
+		const contacts = await exportSelectedColumnsContacts(selectedContactIds, setSelectedContacts);
+		await downloadCsv(contacts);
+		setIsLoading(false);
+	}, [setIsLoading, selectedContactIds, setSelectedContacts]);
+
+	const progress = useMemo(
+		() => (selectedContacts.length * 100) / selectedContactIds.length,
+		[selectedContacts, selectedContactIds],
+	);
+
 	return (
 		<div className="flex flex-col flex-1">
 			<div className="flex flex-col gap-2">
@@ -61,17 +92,7 @@ export function ExportColumns() {
 
 					<CardContent className="flex flex-wrap gap-2 p-6">
 						{selectedColumns.map(({ id, name, columnContacts }) => (
-							<Button
-								key={id}
-								className="flex gap-2 h-9"
-								variant="outline"
-								size="sm"
-								onClick={() => console.log("teste")}
-								onFocus={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-								}}
-							>
+							<Button key={id} className="flex gap-2 h-9" variant="outline" size="sm">
 								{name}
 
 								<Tooltip>
@@ -86,15 +107,12 @@ export function ExportColumns() {
 
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
-										<i className="cursor-pointer ml-2" onClick={(event) => event.stopPropagation()}>
+										<i className="cursor-pointer ml-2">
 											<XIcon />
 										</i>
 									</AlertDialogTrigger>
 
-									<AlertDialogContent
-										onOpenAutoFocus={(e) => e.preventDefault()}
-										onCloseAutoFocus={(e) => e.preventDefault()}
-									>
+									<AlertDialogContent>
 										<AlertDialogHeader>
 											<AlertDialogTitle>
 												Tem certeza que deseja remover a coluna <br />
@@ -108,15 +126,7 @@ export function ExportColumns() {
 
 										<AlertDialogFooter>
 											<AlertDialogCancel>Cancelar</AlertDialogCancel>
-											<AlertDialogAction
-												onClick={(event) => {
-													event.stopPropagation();
-													event.preventDefault();
-													handleRemove(id);
-												}}
-											>
-												Remover
-											</AlertDialogAction>
+											<AlertDialogAction onClick={() => handleRemove(id)}>Remover</AlertDialogAction>
 										</AlertDialogFooter>
 									</AlertDialogContent>
 								</AlertDialog>
@@ -144,7 +154,74 @@ export function ExportColumns() {
 				</Card>
 			</div>
 
-			<ApplyChanges />
+			<ConfirmChanges progress={progress}>
+				<AlertDialog>
+					<AlertDialogTrigger asChild>
+						<Button variant="outline" size="sm">
+							{isLoading ? <Spinner /> : "Exportar"}
+						</Button>
+					</AlertDialogTrigger>
+
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>Deseja exportar as colunas?</AlertDialogTitle>
+
+							<AlertDialogDescription>As colunas serão exportadas para um arquivo CSV.</AlertDialogDescription>
+						</AlertDialogHeader>
+
+						<AlertDialogFooter>
+							<AlertDialogCancel>Cancelar</AlertDialogCancel>
+							<AlertDialogAction onClick={handleExport}>Exportar</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			</ConfirmChanges>
 		</div>
 	);
+}
+
+function exportSelectedColumnsContacts(
+	contactIds: Array<number>,
+	setContacts: Dispatch<SetStateAction<Array<Contact>>>,
+): Promise<Array<Contact>> {
+	return new Promise((resolve) => {
+		const contacts: Array<Contact> = [];
+
+		let currentCount = 0;
+		const intervalId = setInterval(() => {
+			if (currentCount === contactIds.length - 1) clearInterval(intervalId);
+
+			api.get<Contact>(`/contacts/${contactIds[currentCount]}`).then(({ data }) => {
+				contacts.push(data);
+				setContacts((state) => [...state, data]);
+
+				if (contacts.length === contactIds.length) resolve(contacts);
+			});
+
+			currentCount += 1;
+		}, 50);
+	});
+}
+
+function downloadCsv(data: Array<Contact>): Promise<void> {
+	return new Promise((resolve) => {
+		const header = "Nome;Número";
+		const rows = data.map(({ name, number }) => `${name};${number}`);
+		const csv = [header, ...rows].join("\n");
+
+		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "LISTA_DE_CLIENTES.csv";
+		a.style.display = "none";
+		document.body.appendChild(a);
+		a.click();
+
+		a.remove();
+		URL.revokeObjectURL(url);
+
+		resolve(undefined);
+	});
 }

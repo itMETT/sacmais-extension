@@ -1,20 +1,21 @@
-import { Button } from "@/components/ui/button";
 import { Item, ItemActions, ItemContent } from "@/components/ui/item";
 import { Progress } from "./ui/progress";
+import type { ReactNode } from "react";
 
-export function ApplyChanges() {
+type Prop = {
+	children: ReactNode;
+	progress: number;
+};
+
+export function ConfirmChanges({ children, progress }: Prop) {
 	return (
 		<div className="mt-auto">
 			<Item className="mt-4" variant="outline" size="sm">
 				<ItemContent>
-					<Progress />
+					<Progress value={progress} />
 				</ItemContent>
 
-				<ItemActions>
-					<Button variant="outline" size="sm">
-						Aplicar
-					</Button>
-				</ItemActions>
+				<ItemActions>{children}</ItemActions>
 			</Item>
 		</div>
 	);
