@@ -231,7 +231,7 @@ function fetchContacts(
 			});
 
 			currentCount += 1;
-		}, 50);
+		}, 25);
 	});
 }
 

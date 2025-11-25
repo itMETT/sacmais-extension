@@ -225,6 +225,6 @@ function transferContacts(
 				});
 
 			currentCount += 1;
-		}, 50);
+		}, 25);
 	});
 }
