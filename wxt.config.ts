@@ -10,7 +10,7 @@ export default defineConfig({
 		} as WxtViteConfig;
 	},
 	manifest: {
-		name: "SacMais Enhancer",
+		name: "Sacmais Enhancer",
 		permissions: ["storage", "tabs"],
 		web_accessible_resources: [
 			{
