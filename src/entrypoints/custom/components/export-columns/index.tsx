@@ -20,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/axios";
 import type { Dispatch, SetStateAction } from "react";
 import { Combobox } from "@/components/ui/combobox";
+import Papaparse from "papaparse";
 
 const defaultPlaceholder = "Escolha uma coluna";
 const defaultNotFoundMessage = "Nenhuma coluna encontrada";
@@ -237,9 +238,11 @@ function fetchContacts(
 
 function downloadCsv(data: Array<Contact>): Promise<void> {
 	return new Promise((resolve) => {
-		const header = "Nome;Número";
-		const rows = data.map(({ name, number }) => `${name};${number}`);
-		const csv = [header, ...rows].join("\n");
+		const csvJSON = data.map(({ name, number }) => ({ Nome: name, Número: number }));
+		const csv = Papaparse.unparse(csvJSON, {
+			delimiter: ",",
+			quotes: true,
+		});
 
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
