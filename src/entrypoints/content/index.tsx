@@ -2,8 +2,6 @@ import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import type { IframeContentScriptUi } from "wxt/utils/content-script-ui/iframe";
 import { ANCHOR_QUERY_SELECTOR, CHANGE_EXTENSION_VISIBILITY_EVENT_NAME, STORAGE_KEY } from "@/utils/constants";
 
-const whereToShowCustomUI = [/\/#\/boards$/];
-
 let uiRef: IframeContentScriptUi<HTMLElement> | null = null;
 let lastHref: string;
 
@@ -13,11 +11,11 @@ export default defineContentScript({
 	runAt: "document_end",
 	async main(context) {
 		lastHref = location.href;
-		init(location.href, context);
+		init(context);
 
 		chrome.runtime.onMessage.addListener((message, _sender) => {
 			if (message.type === CHANGE_EXTENSION_VISIBILITY_EVENT_NAME) {
-				init(location.href, context);
+				init(context);
 			}
 			if (message.type === "GET_AUTH_TOKEN") {
 				postMessage({ type: "SEND_AUTH_TOKEN", payload: localStorage.getItem("time") });
@@ -43,28 +41,23 @@ export default defineContentScript({
 			if (location.href === lastHref) return;
 
 			lastHref = location.href;
-			init(location.href, context);
+			init(context);
 		}, 150);
 	},
 });
 
-async function init(url: string, context: ContentScriptContext) {
+async function init(context: ContentScriptContext) {
 	const activatedStatus = await storage.getItem(STORAGE_KEY, { fallback: "invisible" });
 
-	if (isAllowedURL(url) && activatedStatus === "invisible") {
+	if (activatedStatus === "invisible") {
 		uiRef?.remove();
 		uiRef = null;
 		return;
 	}
 
-	if (isAllowedURL(url)) {
-		await waitForElement(ANCHOR_QUERY_SELECTOR);
-		await mountShadowRootUi(context, document);
-		return;
-	}
-
-	uiRef?.remove();
-	uiRef = null;
+	await waitForElement(ANCHOR_QUERY_SELECTOR);
+	await mountShadowRootUi(context, document);
+	return;
 }
 
 async function mountShadowRootUi(context: ContentScriptContext, _document?: Document) {
@@ -116,8 +109,4 @@ function waitForElement(querySelector: string) {
 
 		observer.observe(document.body, { childList: true, subtree: true });
 	});
-}
-
-function isAllowedURL(url: string) {
-	return whereToShowCustomUI.some((allowedURL) => allowedURL.test(url));
 }
