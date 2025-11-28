@@ -1,3 +1,4 @@
+import ExcelJS from "exceljs";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -20,7 +21,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/axios";
 import type { Dispatch, SetStateAction } from "react";
 import { Combobox } from "@/components/ui/combobox";
-import Papaparse from "papaparse";
 
 const defaultPlaceholder = "Escolha uma coluna";
 const defaultNotFoundMessage = "Nenhuma coluna encontrada";
@@ -73,7 +73,7 @@ export function ExportColumns() {
 		setIsLoading(true);
 
 		const contacts = await fetchContacts(selectedContactIds, setFetchedContacts);
-		await downloadCsv(contacts);
+		await downloadExcel(contacts);
 		setIsLoading(false);
 	}, [setIsLoading, selectedContactIds, setFetchedContacts]);
 
@@ -198,7 +198,9 @@ export function ExportColumns() {
 							<AlertDialogHeader>
 								<AlertDialogTitle>Deseja exportar as colunas?</AlertDialogTitle>
 
-								<AlertDialogDescription>As colunas serão exportadas para um arquivo CSV.</AlertDialogDescription>
+								<AlertDialogDescription>
+									As colunas serão exportadas para um arquivo Excel (.xlsx).
+								</AlertDialogDescription>
 							</AlertDialogHeader>
 
 							<AlertDialogFooter>
@@ -236,27 +238,31 @@ function fetchContacts(
 	});
 }
 
-function downloadCsv(data: Array<Contact>): Promise<void> {
+function downloadExcel(data: Array<Contact>): Promise<void> {
 	return new Promise((resolve) => {
-		const csvJSON = data.map(({ name, number }) => ({ Nome: name, Número: number }));
-		const csv = Papaparse.unparse(csvJSON, {
-			delimiter: ",",
-			quotes: true,
-		});
+		(async () => {
+			const workbook = new ExcelJS.Workbook();
+			const sheet = workbook.addWorksheet("1");
+			sheet.columns = [
+				{ header: "Nome", key: "name", width: 102 },
+				{ header: "Número", key: "number", width: 26 },
+			];
+			sheet.addRows(data);
+			const buffer = await workbook.xlsx.writeBuffer();
+			const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+			const url = URL.createObjectURL(blob);
 
-		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "LISTA_DE_CLIENTES.xlsx";
+			a.style.display = "none";
+			document.body.appendChild(a);
+			a.click();
 
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = "LISTA_DE_CLIENTES.csv";
-		a.style.display = "none";
-		document.body.appendChild(a);
-		a.click();
+			a.remove();
+			URL.revokeObjectURL(url);
 
-		a.remove();
-		URL.revokeObjectURL(url);
-
-		resolve(undefined);
+			resolve(undefined);
+		})();
 	});
 }
