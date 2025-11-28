@@ -25,8 +25,3 @@ async function isSacMaisTab(currentTab: Browser.tabs.Tab | undefined): Promise<b
 
 	return Boolean(sacMaisTab);
 }
-
-async function getFirstSacMaisTab(): Promise<Browser.tabs.Tab | null> {
-	const sacMaisTabs = await browser.tabs.query({ url: "*://*.sacmais.com.br/*" });
-	return sacMaisTabs.shift() ?? null;
-}

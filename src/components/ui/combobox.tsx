@@ -18,18 +18,21 @@ import type { ReactNode } from "react";
 type Entry = {
 	id: number | string;
 	name: string;
+	icon?: ReactNode;
+	group?: string;
 	[key: string]: any;
-	group: string;
 };
 
 type Props<T extends Entry> = {
 	children: ReactNode;
 	entries: Array<T>;
 	placeholder: string;
-	notFoundMessage: string;
+	notFoundMessage: ReactNode;
 	selectedId?: Entry["id"] | null;
 	disabledIds?: Entry["id"][] | null;
+	firstEntry?: ReactNode;
 	onSelect(entry: T["id"]): void;
+	onInput?(value: string): void;
 };
 
 export function Combobox<T extends Entry>({
@@ -39,7 +42,9 @@ export function Combobox<T extends Entry>({
 	notFoundMessage,
 	selectedId,
 	disabledIds,
+	firstEntry,
 	onSelect,
+	onInput,
 }: Props<T>) {
 	const [open, setOpen] = useState(false);
 
@@ -49,8 +54,8 @@ export function Combobox<T extends Entry>({
 
 		const initialState = {} as Record<string, Entry[]>;
 		return entries.reduce((acc, cur) => {
-			if (!acc[cur.group]) acc[cur.group] = [cur];
-			else acc[cur.group] = [...acc[cur.group], cur];
+			if (!acc[cur.group!]) acc[cur.group!] = [cur];
+			else acc[cur.group!] = [...acc[cur.group!], cur];
 
 			return acc;
 		}, initialState);
@@ -67,12 +72,18 @@ export function Combobox<T extends Entry>({
 
 			<PopoverContent className="w-[200px] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
 				<Command>
-					<CommandInput placeholder={placeholder} className="h-9" />
+					<CommandInput
+						placeholder={placeholder}
+						className="h-9"
+						onInput={(event) => onInput?.((event.target as HTMLInputElement).value)}
+					/>
 					<CommandList>
 						<CommandEmpty>{notFoundMessage}</CommandEmpty>
+						{firstEntry}
+
 						{isUngroupedEntries ? (
 							<CommandGroup>
-								{entries.map(({ id, name }) => (
+								{entries.map(({ id, name, icon }) => (
 									<CommandItem
 										key={id}
 										value={name}
@@ -82,6 +93,7 @@ export function Combobox<T extends Entry>({
 										}}
 										disabled={optimizedDisabledIds[id]}
 									>
+										{icon}
 										{name}
 										<Check className={cn("ml-auto", selectedId === id ? "opacity-100" : "opacity-0")} />
 									</CommandItem>
@@ -93,7 +105,7 @@ export function Combobox<T extends Entry>({
 								return (
 									<>
 										<CommandGroup key={group} heading={group}>
-											{entries.map(({ id, name }) => (
+											{entries.map(({ id, name, icon }) => (
 												<CommandItem
 													key={id}
 													value={name}
@@ -103,6 +115,7 @@ export function Combobox<T extends Entry>({
 													}}
 													disabled={optimizedDisabledIds[id]}
 												>
+													{icon}
 													{name}
 													<Check className={cn("ml-auto", selectedId === id ? "opacity-100" : "opacity-0")} />
 												</CommandItem>

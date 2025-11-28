@@ -122,3 +122,8 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+body.is-loading {
+	pointer-events: none;
+	cursor: wait;
+}

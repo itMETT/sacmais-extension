@@ -4,7 +4,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Tooltip } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
-import { useCRMStore } from "../../stores/crm.store";
+import { type Contact, useCRMStore } from "../../stores/crm.store";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -22,10 +22,8 @@ import { api } from "@/lib/axios";
 import type { Dispatch, SetStateAction } from "react";
 import { Combobox } from "@/components/ui/combobox";
 
-const defaultPlaceholder = "Escolha uma coluna";
+const defaultPlaceholder = "Pesquise uma coluna";
 const defaultNotFoundMessage = "Nenhuma coluna encontrada";
-
-type Contact = { id: number; name: string; number: string };
 
 export function ExportColumns() {
 	const [selectedColumnIds, setSelectedColumnIds] = useState<Array<number>>([]);
@@ -78,7 +76,7 @@ export function ExportColumns() {
 	}, [setIsLoading, selectedContactIds, setFetchedContacts]);
 
 	const progress = useMemo(
-		() => (fetchedContacts.length * 100) / selectedContactIds.length,
+		() => (fetchedContacts.length * 100) / (selectedContactIds.length || 1),
 		[fetchedContacts, selectedContactIds],
 	);
 

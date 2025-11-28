@@ -3,7 +3,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Tooltip } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChevronsUpDown, RotateCcwIcon } from "lucide-react";
-import { useCRMStore } from "../../stores/crm.store";
+import { type Contact, useCRMStore } from "../../stores/crm.store";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -22,9 +22,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { Item, ItemActions, ItemContent } from "@/components/ui/item";
 import { Combobox } from "@/components/ui/combobox";
 
-type Contact = { id: number; name: string; number: string };
-
-const defaultPlaceholder = "Escolha uma coluna";
+const defaultPlaceholder = "Pesquise uma coluna";
 const defaultNotFoundMessage = "Nenhuma coluna encontrada";
 
 export function TransferContacts() {
@@ -91,7 +89,7 @@ export function TransferContacts() {
 								onSelect={setOriginColumnId}
 							>
 								<Button className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
-									{originColumn ? originColumn.name : "Nehuma coluna selecionada..."}
+									{originColumn ? originColumn.name : "Selecione uma coluna..."}
 
 									{originColumn && (
 										<Tooltip>
@@ -124,7 +122,7 @@ export function TransferContacts() {
 								onSelect={setDestinationColumnId}
 							>
 								<Button className="flex gap-2 h-9" variant="outline" size="sm" disabled={isLoading}>
-									{destinationColumn ? destinationColumn.name : "Nehuma coluna selecionada..."}
+									{destinationColumn ? destinationColumn.name : "Selecione uma coluna..."}
 
 									{destinationColumn && (
 										<Tooltip>
@@ -213,7 +211,7 @@ function transferContacts(
 			if (currentCount === contactIds.length - 1) clearInterval(intervalId);
 
 			api
-				.put<Contact>(`/board-columns/${contactIds[currentCount]}/move`, {
+				.put(`/board-columns/${contactIds[currentCount]}/move`, {
 					oldColumnId: originColumnId,
 					newColumnId: destinationColumnId,
 				})
