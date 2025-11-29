@@ -142,7 +142,7 @@ export function ExportColumns() {
 								<AlertDialogContent>
 									<AlertDialogHeader>
 										<AlertDialogTitle>
-											Tem certeza que deseja remover a coluna <br />
+											Tem certeza que deseja desmarcar a coluna <br />
 											<i>“{name.trim()}”</i>?
 										</AlertDialogTitle>
 

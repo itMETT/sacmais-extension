@@ -1,3 +1,2 @@
-export const STORAGE_KEY = "local:sacmais-extension-activation-status";
-export const CHANGE_EXTENSION_VISIBILITY_EVENT_NAME = "change-sacmais-extension-visibility";
 export const ANCHOR_QUERY_SELECTOR = "body";
+export const LOCAL_STORAGE_VISIBILITY_KEY = "sacmais-extension@visibility";

@@ -86,7 +86,7 @@ export function TagColumns() {
 	const createTagButton = useMemo(
 		() => (
 			<Button
-				className="justify-start gap-2 font-normal text-[14px] px-2 py-1.5 mt-1 mx-1"
+				className="justify-start ext-create-tag-button gap-2 font-normal text-[14px] px-2 py-1.5 mt-1 mx-1"
 				style={{ width: "calc(100% - 8px)" }}
 				variant="outline"
 				size="sm"
@@ -104,7 +104,6 @@ export function TagColumns() {
 		),
 		[isCreatingTag, handleCreateTag],
 	);
-	console.log(noExistentTagMatchesInputValue && createTagButton);
 
 	return (
 		<div className="flex flex-col flex-1">
@@ -159,7 +158,6 @@ export function TagColumns() {
 								entries={tags.map(({ id, name, color }) => ({ id, name, icon: <HashIcon color={color} /> }))}
 								placeholder="Pesquise uma etiqueta"
 								onInput={setTagComboboxInput}
-								notFoundMessage={noExistentTagMatchesInputValue && createTagButton}
 								firstEntry={noExistentTagMatchesInputValue && createTagButton}
 								selectedId={selectedTagId}
 								onSelect={setSelectedTagId}

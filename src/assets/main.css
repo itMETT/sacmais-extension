@@ -123,7 +123,11 @@
 	}
 }
 
-body.is-loading {
+body.ext-is-loading {
 	pointer-events: none;
 	cursor: wait;
+}
+
+.ext-create-tag-button:has(+ div[hidden]) {
+	margin-bottom: 4px;
 }

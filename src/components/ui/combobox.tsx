@@ -27,7 +27,7 @@ type Props<T extends Entry> = {
 	children: ReactNode;
 	entries: Array<T>;
 	placeholder: string;
-	notFoundMessage: ReactNode;
+	notFoundMessage?: ReactNode;
 	selectedId?: Entry["id"] | null;
 	disabledIds?: Entry["id"][] | null;
 	firstEntry?: ReactNode;
@@ -66,6 +66,8 @@ export function Combobox<T extends Entry>({
 		return Object.fromEntries(disabledIds.map((id) => [id, true]));
 	}, [disabledIds]);
 
+	useEffect(() => setOpen(false), [selectedId]);
+
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>{children}</PopoverTrigger>
@@ -78,7 +80,7 @@ export function Combobox<T extends Entry>({
 						onInput={(event) => onInput?.((event.target as HTMLInputElement).value)}
 					/>
 					<CommandList>
-						<CommandEmpty>{notFoundMessage}</CommandEmpty>
+						{notFoundMessage && <CommandEmpty>{notFoundMessage}</CommandEmpty>}
 						{firstEntry}
 
 						{isUngroupedEntries ? (

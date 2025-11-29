@@ -28,4 +28,13 @@ export default defineConfig({
 			128: "icons/128.png",
 		},
 	},
+	hooks: {
+		"build:manifestGenerated": (_wxt, manifest) => {
+			manifest.content_scripts ??= [];
+			manifest.content_scripts.push({
+				css: ["assets/injected.css"],
+				matches: ["*://*.sacmais.com.br/*"],
+			});
+		},
+	},
 });
