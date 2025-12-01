@@ -72,7 +72,7 @@ export function Combobox<T extends Entry>({
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>{children}</PopoverTrigger>
 
-			<PopoverContent className="w-[200px] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+			<PopoverContent className="w-[200px] p-0" side="bottom" avoidCollisions={false}>
 				<Command>
 					<CommandInput
 						placeholder={placeholder}
