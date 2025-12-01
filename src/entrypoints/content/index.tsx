@@ -10,7 +10,7 @@ export default defineContentScript({
 	cssInjectionMode: "ui",
 	runAt: "document_end",
 	async main(context) {
-		await injectExtensionToggleButton(document, () => {
+		await injectExtensionToggleButton(() => {
 			toggleVisibility();
 			init(context);
 		});
@@ -48,16 +48,15 @@ async function init(context: ContentScriptContext) {
 	}
 
 	await waitForElement(ANCHOR_QUERY_SELECTOR);
-	await mountShadowRootUi(context, document);
+	await mountShadowRootUi(context);
 	return;
 
-	async function mountShadowRootUi(context: ContentScriptContext, document: Document) {
+	async function mountShadowRootUi(context: ContentScriptContext) {
 		if (uiRef) {
 			uiRef.remove();
 			uiRef = null;
 		}
 
-		const originalDocumentScrollTop = document.documentElement.scrollTop;
 		document.documentElement.scrollTop = 0;
 
 		uiRef = createIframeUi(context, {
@@ -83,7 +82,10 @@ async function init(context: ContentScriptContext) {
 				document.body.style.overflow = "";
 				$mounted?.remove();
 
-				document.documentElement.scrollTop = originalDocumentScrollTop;
+				const currentHash = location.hash;
+				const isTicketPage = location.hash.startsWith("#/tickets");
+				location.replace(isTicketPage ? "#/boards" : "#/tickets");
+				setTimeout(() => location.replace(currentHash));
 			},
 		});
 
@@ -114,7 +116,7 @@ function toggleVisibility() {
 	localStorage.setItem(LOCAL_STORAGE_VISIBILITY_KEY, newVisibility);
 }
 
-async function injectExtensionToggleButton(document: Document, onClick: () => void) {
+async function injectExtensionToggleButton(onClick: () => void) {
 	const HEADER_QUERY_SELECTOR = "header.q-header.q-layout__section--marginal.fixed-top";
 	await waitForElement(HEADER_QUERY_SELECTOR);
 
