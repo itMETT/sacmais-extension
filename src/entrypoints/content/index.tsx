@@ -51,11 +51,14 @@ async function init(context: ContentScriptContext) {
 	await mountShadowRootUi(context, document);
 	return;
 
-	async function mountShadowRootUi(context: ContentScriptContext, _document?: Document) {
+	async function mountShadowRootUi(context: ContentScriptContext, document: Document) {
 		if (uiRef) {
 			uiRef.remove();
 			uiRef = null;
 		}
+
+		const originalDocumentScrollTop = document.documentElement.scrollTop;
+		document.documentElement.scrollTop = 0;
 
 		uiRef = createIframeUi(context, {
 			page: "/custom.html",
@@ -79,6 +82,8 @@ async function init(context: ContentScriptContext) {
 			onRemove($mounted) {
 				document.body.style.overflow = "";
 				$mounted?.remove();
+
+				document.documentElement.scrollTop = originalDocumentScrollTop;
 			},
 		});
 
