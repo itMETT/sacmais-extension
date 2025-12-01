@@ -1,6 +1,13 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
+let shouldCheckToken = true;
+
+const ONE_MINUTE_IN_MILLISECONDS = 1000 * 60;
+setInterval(() => {
+	shouldCheckToken = true;
+}, ONE_MINUTE_IN_MILLISECONDS);
+
 export const api = axios.create({
 	headers: {
 		Accept: "application/json",
@@ -19,9 +26,9 @@ api.interceptors.response.use(
 );
 
 api.interceptors.request.use(
-	(config) => {
+	async (config) => {
 		const token = (config.headers.Authorization as string).split(" ").pop()!;
-		checkAndRefreshToken(token);
+		if (shouldCheckToken) await checkAndRefreshToken(token);
 		return config;
 	},
 	(error) => {
@@ -46,6 +53,7 @@ async function checkAndRefreshToken(token: string): Promise<void> {
 		const response = await axios.post("/auth/refresh_token");
 		const newToken = response.data.token;
 		api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+		shouldCheckToken = false;
 	} catch (_error) {
 		window.location.reload();
 	}
